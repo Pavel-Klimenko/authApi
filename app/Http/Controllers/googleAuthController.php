@@ -7,28 +7,17 @@ use Illuminate\Http\Request;
 
 class googleAuthController extends Controller
 {
-    CONST CLIENT_ID = '574736163037-js2tmlaa7spl0a08rfp9mvjdgq0m7iai.apps.googleusercontent.com';
-    CONST CLIENT_SECRET = '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';
-    CONST REDIRECT_URI = 'https://authapi.biz/login_google/';
-
     public function auth() {
         $authUrl = $this->generateAuthLink();
-        return redirect($authUrl);
+        return response()->json($authUrl);
     }
 
     public function handleServiceResponse(Request $request) {
         $tmpCode = $request->code;
         if (!empty($tmpCode)) {
-            //dump($tmpCode);
             $tokenData = $this->getTokenByCode($tmpCode);
-
-            //dump($tokenData);
-
             if (!empty($tokenData['access_token'])) {
                 $userData = $this->getUserData($tokenData);
-
-                //dump($userData);
-
                 if (!User::where('email', $userData['email'])->exists()) {
                     //Если пользователя с таким email нет в базе, то создаем нового
                     $newUser = User::create([
@@ -36,24 +25,22 @@ class googleAuthController extends Controller
                         'email' => $userData['email'],
                         'password' => bcrypt($userData['email'].$userData['name']),
                     ]);
-                    $result = ['status' => 'new', 'message' => 'Создан новый пользователь', 'email' => $newUser->email, 'name' => $newUser->name];
+                    $userId = $newUser->id;
                 } else {
                     $existedUser = User::where('email', $userData['email'])->first();
-                    $result = ['status' => 'existing', 'message' => 'Пользователь с email '.$existedUser->email.' уже существует'];
+                    $userId = $existedUser->id;
                 }
             }
-
-            //dump($result);
         }
 
-        if (!isset($result)) return redirect('/');
-        return view('result', compact('result'));
+        $comeBackUrl = getenv('FRONT_APP_LINK').'?userId='.$userId. '&authorized=Y';
+        return redirect($comeBackUrl);
     }
 
     private function generateAuthLink() {
         $params = array(
-            'client_id'     => self::CLIENT_ID,
-            'redirect_uri'  => self::REDIRECT_URI,
+            'client_id'     => getenv('GOOGLE_CLIENT_ID'),
+            'redirect_uri'  => getenv('GOOGLE_REDIRECT_URI'),
             'response_type' => 'code',
             'scope'         => 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
         );
@@ -76,9 +63,9 @@ class googleAuthController extends Controller
 
     private function getTokenByCode($tmpCode) {
         $params = array(
-            'client_id'     => self::CLIENT_ID,
-            'client_secret' => self::CLIENT_SECRET,
-            'redirect_uri'  => self::REDIRECT_URI,
+            'client_id'     => getenv('GOOGLE_CLIENT_ID'),
+            'client_secret' => getenv('GOOGLE_CLIENT_SECRET'),
+            'redirect_uri'  => getenv('GOOGLE_REDIRECT_URI'),
             'grant_type'    => 'authorization_code',
             'code'          => $tmpCode
         );

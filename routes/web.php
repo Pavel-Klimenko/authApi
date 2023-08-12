@@ -18,10 +18,3 @@ use App\Http\Controllers\googleAuthController;
 Route::get('/', function () {
     return view('auth');
 });
-
-
-Route::get('/auth-yandex/', [yandexAuthController::class, 'auth'])->name('auth-yandex');
-Route::get('/login_ya/', [yandexAuthController::class, 'handleServiceResponse']);
-
-Route::get('/auth-google/', [googleAuthController::class, 'auth'])->name('auth-google');
-Route::get('/login_google/', [googleAuthController::class, 'handleServiceResponse']);

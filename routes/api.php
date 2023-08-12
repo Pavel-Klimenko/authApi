@@ -2,7 +2,8 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\yandexAuthController;
+use App\Http\Controllers\googleAuthController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -17,3 +18,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::post('/auth-yandex/', [yandexAuthController::class, 'auth']);
+Route::get('/login_ya/', [yandexAuthController::class, 'handleServiceResponse']);
+
+Route::post('/auth-google/', [googleAuthController::class, 'auth']);
+Route::get('/login_google/', [googleAuthController::class, 'handleServiceResponse']);

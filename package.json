@@ -11,6 +11,7 @@
         "vite": "^4.0.0"
     },
     "dependencies": {
+        "laravel-nuxt": "^2.0.2",
         "nuxt3": "^3.7.0-28191648.e373fa7d"
     }
 }

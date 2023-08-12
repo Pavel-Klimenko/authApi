@@ -7,20 +7,13 @@ use Illuminate\Http\Request;
 
 class yandexAuthController extends Controller
 {
-
-    CONST CLIENT_ID = '7048239d0f5a40e4a5c257471069de78';
-    CONST CLIENT_SECRET = '93c9280fa9144973a1eebf98c7a8ef99';
-    CONST REDIRECT_URI = 'http://authapi.biz/login_ya/';
-
     public function auth() {
         $authUrl = $this->generateAuthLink();
-        return redirect($authUrl);
+        return response()->json($authUrl);
     }
-
 
     public function handleServiceResponse(Request $request) {
         $tmpCode = $request->code;
-
         if (!empty($tmpCode)) {
             //dump($yandexTmpCode);
             $tokenData = $this->getTokenByCode($tmpCode);
@@ -35,23 +28,22 @@ class yandexAuthController extends Controller
                         'email' => $userData['default_email'],
                         'password' => bcrypt($userData['default_email'].$userData['real_name']),
                     ]);
-
-                    $result = ['status' => 'new', 'message' => 'Создан новый пользователь', 'email' => $newUser->email, 'name' => $newUser->name];
+                    $userId = $newUser->id;
                 } else {
                     $existedUser = User::where('email', $userData['default_email'])->first();
-                    $result = ['status' => 'existing', 'message' => 'Пользователь с email '.$existedUser->email.' уже существует'];
+                    $userId = $existedUser->id;
                 }
             }
         }
 
-        if (!isset($result)) return redirect('/');
-        return view('result', compact('result'));
+        $comeBackUrl = getenv('FRONT_APP_LINK').'?userId='.$userId. '&authorized=Y';
+        return redirect($comeBackUrl);
     }
 
     private function generateAuthLink() {
         $params = array(
-            'client_id'     => self::CLIENT_ID,
-            'redirect_uri'  => self::REDIRECT_URI,
+            'client_id'     => getenv('YANDEX_CLIENT_ID'),
+            'redirect_uri'  => getenv('YANDEX_REDIRECT_URI'),
             'response_type' => 'code',
         );
         return 'https://oauth.yandex.ru/authorize?' . urldecode(http_build_query($params));
@@ -85,8 +77,8 @@ class yandexAuthController extends Controller
         $params = array(
             'grant_type'    => 'authorization_code',
             'code'          => $yandexTmpCode,
-            'client_id'     => self::CLIENT_ID,
-            'client_secret' => self::CLIENT_SECRET,
+            'client_id'     => getenv('YANDEX_CLIENT_ID'),
+            'client_secret' => getenv('YANDEX_CLIENT_SECRET'),
         );
 
         $ch = curl_init('https://oauth.yandex.ru/token');
@@ -100,5 +92,4 @@ class yandexAuthController extends Controller
 
         return json_decode($data, true);
     }
-
 }
